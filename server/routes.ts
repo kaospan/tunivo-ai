@@ -55,7 +55,8 @@ export async function registerRoutes(
   });
 
   app.get(api.projects.get.path, async (req, res) => {
-    const project = await storage.getProject(Number(req.params.id));
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const project = await storage.getProject(Number(id));
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
@@ -120,7 +121,8 @@ export async function registerRoutes(
   });
 
   app.post(api.projects.generate.path, async (req, res) => {
-    const projectId = Number(req.params.id);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const projectId = Number(id);
     const project = await storage.getProject(projectId);
     
     if (!project) {
@@ -145,7 +147,8 @@ export async function registerRoutes(
   });
 
   app.post(api.projects.render.path, async (req, res) => {
-    const projectId = Number(req.params.id);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const projectId = Number(id);
     const project = await storage.getProject(projectId);
     
     if (!project) {
@@ -165,7 +168,8 @@ export async function registerRoutes(
   });
 
   app.delete(api.projects.delete.path, async (req, res) => {
-    const projectId = Number(req.params.id);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const projectId = Number(id);
     const project = await storage.getProject(projectId);
     
     if (project) {

@@ -25,7 +25,8 @@ export function useProject(id: number) {
       return api.projects.get.responses[200].parse(await res.json());
     },
     // Poll every 2s if processing/pending, otherwise stop
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
+      const data = query.state.data;
       if (!data) return false;
       const activeStates = ['pending', 'analyzing', 'generating', 'rendering', 'ready_to_render'];
       return activeStates.includes(data.status) ? 2000 : false;

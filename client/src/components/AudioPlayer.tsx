@@ -28,6 +28,7 @@ export const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(
   function AudioPlayer({ url, height = 100, onPlaybackUpdate }, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
     const wavesurferRef = useRef<WaveSurfer | null>(null);
+    const isDestroyedRef = useRef(false);
     const animFrameRef = useRef<number>(0);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isReady, setIsReady] = useState(false);
@@ -61,6 +62,7 @@ export const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(
     useEffect(() => {
       if (!containerRef.current) return;
 
+      isDestroyedRef.current = false;
       const ws = WaveSurfer.create({
         container: containerRef.current,
         waveColor: "rgba(255, 255, 255, 0.15)",
@@ -103,7 +105,7 @@ export const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(
       });
 
       const updateLoop = () => {
-        if (ws && !ws.isDestroyed) {
+        if (ws && !isDestroyedRef.current) {
           setCurrentTime(ws.getCurrentTime());
           emitState();
         }
@@ -112,6 +114,7 @@ export const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(
       animFrameRef.current = requestAnimationFrame(updateLoop);
 
       return () => {
+        isDestroyedRef.current = true;
         cancelAnimationFrame(animFrameRef.current);
         ws.destroy();
       };
