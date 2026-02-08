@@ -40,14 +40,7 @@ export const clips = pgTable("clips", {
 
 export const insertProjectSchema = createInsertSchema(projects).omit({ 
   id: true, 
-  createdAt: true, 
-  duration: true, 
-  bpm: true, 
-  outputVideoUrl: true,
-  progress: true,
-  totalClips: true,
-  generatedClips: true,
-  takeNumber: true,
+  createdAt: true,
 });
 
 export const insertClipSchema = createInsertSchema(clips).omit({ 
@@ -63,6 +56,9 @@ export type InsertProject = z.infer<typeof insertProjectSchema>;
 export type Clip = typeof clips.$inferSelect;
 export type InsertClip = z.infer<typeof insertClipSchema>;
 
+// For updates, allow partial fields including computed fields
+export type UpdateProject = Partial<Omit<Project, 'id' | 'createdAt'>>;
+
 // Request types
 export type CreateProjectRequest = {
   title?: string;
@@ -72,7 +68,7 @@ export type CreateProjectRequest = {
   // For this app, we'll likely use FormData for the creation endpoint.
 };
 
-export type UpdateProjectRequest = Partial<InsertProject>;
+export type UpdateProjectRequest = UpdateProject;
 
 // Response types
 export interface ProjectResponse extends Project {
@@ -86,4 +82,8 @@ export interface GenerateProgressResponse {
   progress: number;
   message?: string;
 }
+
+// Re-export chat models
+export { conversations, messages } from "./models/chat";
+export type { Conversation, InsertConversation, Message, InsertMessage } from "./models/chat";
 
