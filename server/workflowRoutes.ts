@@ -73,6 +73,9 @@ export function registerWorkflowRoutes(app: Express) {
   });
 
   // Resume a paused workflow instance
+  // SECURITY NOTE: This endpoint should have rate limiting in production
+  // to prevent brute-force attacks on resume tokens.
+  // Consider using express-rate-limit or similar middleware.
   app.post("/api/v1/instances/:id/resume", async (req, res) => {
     try {
       const { id } = req.params;

@@ -148,7 +148,22 @@ The workflow will continue executing from the `human_approval` node with the mer
 
 5. **Token Expiration**: Consider implementing TTL (time-to-live) for resume tokens by storing a `pausedAt` timestamp and rejecting old tokens.
 
-6. **Rate Limiting**: Implement rate limiting on resume endpoints to prevent abuse.
+6. **Rate Limiting**: **CRITICAL** - Implement rate limiting on the `/api/v1/instances/:id/resume` endpoint to prevent brute-force attacks on resume tokens. Use `express-rate-limit` or similar middleware:
+   ```typescript
+   import rateLimit from 'express-rate-limit';
+   
+   const resumeLimiter = rateLimit({
+     windowMs: 15 * 60 * 1000, // 15 minutes
+     max: 5, // limit each IP to 5 requests per windowMs
+     message: 'Too many resume attempts, please try again later'
+   });
+   
+   app.post("/api/v1/instances/:id/resume", resumeLimiter, async (req, res) => {
+     // ... handler code
+   });
+   ```
+
+7. **Token Invalidation**: Implement a mechanism to invalidate resume tokens after they're used once, or after a certain number of failed attempts.
 
 ### Migration
 
