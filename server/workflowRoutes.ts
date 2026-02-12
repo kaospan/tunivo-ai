@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { db } from "./db";
 import { workflowInstances, workflows, executionLogs } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, asc } from "drizzle-orm";
 import { verifyResumeToken } from "./inngest/workflowExecutor";
 import { inngest } from "./inngest";
 import { randomUUID } from "crypto";
@@ -171,7 +171,7 @@ export function registerWorkflowRoutes(app: Express) {
         .select()
         .from(executionLogs)
         .where(eq(executionLogs.instanceId, id))
-        .orderBy(executionLogs.createdAt);
+        .orderBy(asc(executionLogs.createdAt));
 
       res.json(logs);
     } catch (err) {

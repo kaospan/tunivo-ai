@@ -66,7 +66,7 @@ async function executeNode(
         nodeId: node.id,
         action: "PAUSED_FOR_HUMAN",
         input: context,
-        error: "PAUSED_FOR_HUMAN",
+        output: { reason: "PAUSED_FOR_HUMAN", nodeData: node.data },
       });
 
       return { output: context, shouldPause: true, pauseToken: resumeToken };
