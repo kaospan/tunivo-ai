@@ -13,6 +13,9 @@ import { randomUUID, createHash } from "crypto";
 import express from 'express';
 import { getVisualProvider } from "./providers";
 import type { AnalysisResult } from "./providers";
+import { registerWorkflowRoutes } from "./workflowRoutes";
+import { serve } from "inngest/express";
+import { inngest, functions } from "./inngest";
 
 function computeFileHash(filePath: string): string {
   const data = fs.readFileSync(filePath);
@@ -45,6 +48,15 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+
+  // Register Inngest endpoint for workflow execution
+  app.use("/api/inngest", serve({ 
+    client: inngest, 
+    functions,
+  }));
+
+  // Register workflow API routes
+  registerWorkflowRoutes(app);
 
   app.use('/generated', express.static(OUTPUT_DIR));
   app.use('/uploads', express.static(UPLOADS_DIR));

@@ -1,6 +1,16 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+// === ENUMS ===
+
+export const executionStatusEnum = pgEnum("execution_status", [
+  "PENDING",
+  "RUNNING",
+  "COMPLETED",
+  "FAILED",
+  "WAITING_FOR_INPUT"
+]);
 
 // === TABLE DEFINITIONS ===
 
@@ -36,6 +46,42 @@ export const clips = pgTable("clips", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Workflow execution tables
+export const workflows = pgTable("workflows", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  definition: jsonb("definition").notNull(), // Workflow graph/nodes
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const workflowInstances = pgTable("workflow_instances", {
+  id: text("id").primaryKey(),
+  workflowId: text("workflow_id").notNull().references(() => workflows.id),
+  status: executionStatusEnum("status").notNull().default("PENDING"),
+  context: jsonb("context").notNull().default({}),
+  totalTokens: integer("total_tokens").notNull().default(0),
+  totalCost: text("total_cost").notNull().default("0.0"), // Store as text to avoid decimal precision issues
+  currentNodeId: text("current_node_id"),
+  pausedBy: text("paused_by"),
+  resumeTokenHash: text("resume_token_hash"),
+  pauseMeta: jsonb("pause_meta"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const executionLogs = pgTable("execution_logs", {
+  id: serial("id").primaryKey(),
+  instanceId: text("instance_id").notNull().references(() => workflowInstances.id),
+  nodeId: text("node_id"),
+  action: text("action").notNull(), // e.g., "NODE_STARTED", "NODE_COMPLETED", "PAUSED_FOR_HUMAN", "RESUMED"
+  input: jsonb("input"),
+  output: jsonb("output"),
+  error: text("error"),
+  userId: text("user_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // === SCHEMAS ===
 
 export const insertProjectSchema = createInsertSchema(projects).omit({ 
@@ -48,6 +94,21 @@ export const insertClipSchema = createInsertSchema(clips).omit({
   createdAt: true 
 });
 
+export const insertWorkflowSchema = createInsertSchema(workflows).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertWorkflowInstanceSchema = createInsertSchema(workflowInstances).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertExecutionLogSchema = createInsertSchema(executionLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
 // === EXPLICIT TYPES ===
 
 export type Project = typeof projects.$inferSelect;
@@ -56,8 +117,20 @@ export type InsertProject = z.infer<typeof insertProjectSchema>;
 export type Clip = typeof clips.$inferSelect;
 export type InsertClip = z.infer<typeof insertClipSchema>;
 
+export type Workflow = typeof workflows.$inferSelect;
+export type InsertWorkflow = z.infer<typeof insertWorkflowSchema>;
+
+export type WorkflowInstance = typeof workflowInstances.$inferSelect;
+export type InsertWorkflowInstance = z.infer<typeof insertWorkflowInstanceSchema>;
+
+export type ExecutionLog = typeof executionLogs.$inferSelect;
+export type InsertExecutionLog = z.infer<typeof insertExecutionLogSchema>;
+
+export type ExecutionStatus = "PENDING" | "RUNNING" | "COMPLETED" | "FAILED" | "WAITING_FOR_INPUT";
+
 // For updates, allow partial fields including computed fields
 export type UpdateProject = Partial<Omit<Project, 'id' | 'createdAt'>>;
+export type UpdateWorkflowInstance = Partial<Omit<WorkflowInstance, 'id' | 'createdAt'>>;
 
 // Request types
 export type CreateProjectRequest = {
