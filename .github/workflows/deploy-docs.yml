@@ -31,6 +31,7 @@ jobs:
       - name: Build
         run: npm run build
       - name: Deploy to /docs
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           rm -rf docs || true
           mkdir -p docs
